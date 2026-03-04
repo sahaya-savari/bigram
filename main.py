@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Form, UploadFile, File
+from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
 from collections import defaultdict
 import re
@@ -67,26 +67,3 @@ def root():
 def predict(word: str = Query(..., description="The word to predict the next word for")):
     """Predict using the default corpus."""
     return get_prediction(word, default_unigram, default_bigram)
-
-
-@app.post("/predict-custom")
-async def predict_custom(
-    word: str = Form(...),
-    corpus_text: Optional[str] = Form(None),
-    corpus_file: Optional[UploadFile] = File(None),
-):
-    """Predict using a custom corpus (pasted text or uploaded file)."""
-    # Determine which corpus to use
-    if corpus_file and corpus_file.filename:
-        content = await corpus_file.read()
-        text = content.decode("utf-8", errors="ignore")
-    elif corpus_text and corpus_text.strip():
-        text = corpus_text
-    else:
-        # Fall back to default
-        return get_prediction(word, default_unigram, default_bigram)
-
-    unigram, bigram = build_model(text)
-    result = get_prediction(word, unigram, bigram)
-    result["corpus_source"] = "custom"
-    return result
